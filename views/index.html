@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>NBA Data Visualization</title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<h1> NBA Finals Data Visualization </h1>
+	<div id="search" class="ui-widget">
+		<label for="players">Players: </label>
+		<input id="players">
+	</div>
+	<svg width="960" height="500" id="timeline"></svg>
+</body>
+
+<script>
+	//create graph -> build x and y axes
+	var svg = d3.select("#timeline")
+		margin = {top: 20, right: 20, bottom: 20, left: 50}
+		width = +svg.attr("width") - margin.left - margin.right
+		height = +svg.attr("height") - margin.top - margin.bottom;
+
+	var x = d3.scaleLinear().domain([1,506]).range([0, width])
+	var y = d3.scaleLinear().domain([0,40]).rangeRound([height, 0])
+	var line = d3.line()
+	    .x(function(d) { return x(d.Play); })
+	    .y(function(d) { return y(d.Total); });
+
+	var g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	var play_data
+	var players_set = d3.set()
+	g.append("g")
+		.attr("transform", "translate(0," + height + ")")
+		.call(d3.axisBottom(x))
+		  
+	g.append("g")
+		.call(d3.axisLeft(y))
+
+	d3.csv('nba_finals_game_1.csv', function(data){
+		play_data = data
+
+		play_data.forEach(function(d) {
+			d.Play = +d.Play;
+		    d.Points = +d.Points
+		    d.Total = +d.Total
+		    players_set.add(d.Player)
+		});
+
+		$( "#players" ).autocomplete({
+			source: players_set.values()
+		});
+
+	})
+
+	//var players_set = ["LeBron James", "Kevin Durant", "Stephen Curry", "Kyrie Irving"]
+
+
+	$( "#players" ).on( "autocompleteselect", function( event, ui ) {
+		var btn = document.createElement("BUTTON")
+	    var t = document.createTextNode(ui.item.value)
+	   	btn.onclick = function(){
+			deleteButton(ui.item.value)
+		}
+		btn.setAttribute("id", ui.item.value);
+	    btn.appendChild(t)
+	    document.getElementById("search").appendChild(btn)
+	    console.log(ui.item.value)
+	    selectPlayer(ui.item.value)
+	})
+
+	function selectPlayer(attr) {
+		var p_data = play_data.filter(function(d) {
+			return d["Player"] === attr
+		})
+
+		g.append("path")
+			.datum(p_data)
+			.attr("fill", "none")
+			.attr("stroke", "blue")
+			.attr("stroke-linejoin", "round")
+			.attr("stroke-linecap", "round")
+			.attr("stroke-width", 1.5)
+			.attr("d", line);
+
+	}
+ </script>
+</html>
